@@ -47,7 +47,7 @@
     "src/hosts/claude-code.js": "2212bc39b49822018800dfe33a471e56bbb4c5233d716bfa7aa4fff77aa23edb",
     "src/hosts/codex.js": "d41ecd132ce2db7b47aad9cebbc020d70e6810d48c3554858d099ff2e8f6608b",
     "src/hosts/index.js": "ab276c41ab722bcdf72c2d1649cecbb760ae05c41c1372aae4c2447aa7c11539",
-    "src/mcp-server.js": "8b2ee4b939b25c1b1f507b295a43a2ebad852b8bac9d31af9bf7fb39b181c12e",
+    "src/mcp-server.js": "1b34b7f280809a890f6604dd4d66cab177eb00169e44116b8f957f5578952cc8",
     "src/policy.js": "169cc33793b91ee01a78e6403aeefff1ab5e92f33b73eb85912fe03666464975",
     "src/process-runner.js": "49533b038044dfb8bc76ed01c030d06a9856ead0836157fb693e2a7d40f786d6",
     "src/redact.js": "ebf1afff46341078706b0401838c53db043603586e280d51ece5cf1feba35189",
@@ -55,7 +55,7 @@
     "src/spaces.js": "45ef786537cb2a446db5e926e5a1c10b73639d2767dec84611f914f78d4325eb",
     "src/tools.js": "55960c9a677661763e0317fd54ccc787c2edb39c87371c7fbc40cd55f0761c04"
   },
-  "filesDigest": "28a3bbd9bbcf966df9fae8ec6ea5be3441f6ab535c1636bb1ce33f67b827d423",
+  "filesDigest": "3db6d3e733877de09d20a5393c47ef4bb684c91e5d61a24783db07e97fa6522b",
   "brainDigest": "c0fb7b079ded157059b91601361429944697dae3cc42abc00dfe1a680986b0f4",
   "gateFingerprint": "6e53c784eee38310188948fc75fb49e6b4ebc04e247d01b903fa8c8a92d67bdd",
   "developmentPins": {

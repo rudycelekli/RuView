@@ -12,7 +12,6 @@
 // mid-run see a live server. Responses may therefore arrive out of request
 // order, which JSON-RPC permits (ids correlate them).
 
-import { createInterface } from 'node:readline';
 import { readFileSync } from 'node:fs';
 import { listTools, runTool } from './tools.js';
 
@@ -72,7 +71,6 @@ async function handle(msg, context = {}) {
 
 export function startMcpServer() {
   log(`starting v${SERVER_INFO.version} (protocol ${PROTOCOL_VERSION}, ${listTools().length} tools)`);
-  const rl = createInterface({ input: process.stdin, crlfDelay: Infinity });
 
   // tools/call runs are serialized through a FIFO promise chain: hardware/mutating
   // tools (calibrate, serial monitor, flash) must never overlap. ping/tools/list/
@@ -90,7 +88,7 @@ export function startMcpServer() {
     log('handler error:', String(err));
   });
 
-  rl.on('line', (line) => {
+  const acceptLine = (line) => {
     if (Buffer.byteLength(line, 'utf8') > MAX_REQUEST_BYTES) {
       log('oversized JSON-RPC line dropped');
       return;
@@ -132,9 +130,37 @@ export function startMcpServer() {
     } else {
       dispatch(msg); // health/list/handshake answer immediately, even mid tool run
     }
+  };
+
+  // Bound bytes during assembly, rather than after readline has buffered a
+  // complete string. Preserve UTF-8 across chunks and discard only this line.
+  let chunks = [];
+  let bufferedBytes = 0;
+  let discarding = false;
+  process.stdin.on('data', (value) => {
+    const data = Buffer.isBuffer(value) ? value : Buffer.from(value);
+    let offset = 0;
+    while (offset < data.length) {
+      const newline = data.indexOf(0x0a, offset);
+      const end = newline === -1 ? data.length : newline;
+      const segment = data.subarray(offset, end);
+      if (!discarding) {
+        if (bufferedBytes + segment.length > MAX_REQUEST_BYTES) {
+          log('oversized JSON-RPC line dropped');
+          chunks = []; bufferedBytes = 0; discarding = true;
+        } else if(segment.length) {
+          chunks.push(Buffer.from(segment)); bufferedBytes += segment.length;
+        }
+      }
+      if (newline === -1) break;
+      if (!discarding) acceptLine(Buffer.concat(chunks, bufferedBytes).toString('utf8'));
+      chunks = []; bufferedBytes = 0; discarding = false;
+      offset = newline + 1;
+    }
   });
 
-  rl.on('close', () => {
+  process.stdin.on('end', () => {
+    if (!discarding && bufferedBytes) acceptLine(Buffer.concat(chunks, bufferedBytes).toString('utf8'));
     // Wait for any queued/in-flight tool call to settle (its response written)
     // before exiting — fire-and-forget used to race this and drop the response.
     toolChain.then(() => {
