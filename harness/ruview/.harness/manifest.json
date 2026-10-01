@@ -52,10 +52,10 @@
     "src/process-runner.js": "49533b038044dfb8bc76ed01c030d06a9856ead0836157fb693e2a7d40f786d6",
     "src/redact.js": "ebf1afff46341078706b0401838c53db043603586e280d51ece5cf1feba35189",
     "src/repo-trust.js": "06e2a94d7113ed936f208a12b7fcc785801c215a3e2c5e7418f6238d991a289c",
-    "src/spaces.js": "45ef786537cb2a446db5e926e5a1c10b73639d2767dec84611f914f78d4325eb",
+    "src/spaces.js": "304b771194790e653269812f4caf320e0b257c2e4b88a6b6322f7f87b193cac1",
     "src/tools.js": "55960c9a677661763e0317fd54ccc787c2edb39c87371c7fbc40cd55f0761c04"
   },
-  "filesDigest": "28a3bbd9bbcf966df9fae8ec6ea5be3441f6ab535c1636bb1ce33f67b827d423",
+  "filesDigest": "bb40ef96e6cbf5bc5c060254acc3877f58867c74f6c854c3c531e4797f429912",
   "brainDigest": "c0fb7b079ded157059b91601361429944697dae3cc42abc00dfe1a680986b0f4",
   "gateFingerprint": "6e53c784eee38310188948fc75fb49e6b4ebc04e247d01b903fa8c8a92d67bdd",
   "developmentPins": {
