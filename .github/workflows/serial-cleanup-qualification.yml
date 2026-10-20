@@ -1,0 +1,100 @@
+name: Serial cleanup exact-source qualification
+
+on:
+  push:
+    branches: ['qualify/serial-cleanup-crlf-20261019']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: serial-cleanup-qualification-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  qualify:
+    if: github.repository == 'rudycelekli/RuView'
+    name: ${{ matrix.os }} / Node ${{ matrix.node }} / Python 3.11
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: ['20', '22']
+    defaults:
+      run:
+        shell: bash
+        working-directory: harness/ruview
+    env:
+      CI: 'true'
+      DO_NOT_TRACK: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 579bbb65146154ef3217187c477bb2684811f601
+          fetch-depth: 2
+          persist-credentials: false
+          submodules: false
+      - name: Assert exact source, tree, and parent
+        run: |
+          node --input-type=commonjs -e '
+            const {execFileSync}=require("node:child_process");
+            const assert=require("node:assert/strict");
+            const git=(...args)=>execFileSync("git",args,{encoding:"utf8"}).trim();
+            assert.equal(git("rev-parse","HEAD"),"579bbb65146154ef3217187c477bb2684811f601");
+            assert.equal(git("rev-parse","HEAD^{tree}"),"428d372a354f1a8640f0bd7121dbbc4a3807eade");
+            assert.equal(git("show","-s","--format=%P","HEAD"),"eea06928598233a46a5c1aded3e23bae11e0f0cd");
+            console.log(JSON.stringify({source:git("rev-parse","HEAD"),tree:git("rev-parse","HEAD^{tree}"),parent:git("show","-s","--format=%P","HEAD")}));
+          '
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: ${{ matrix.node }}
+          package-manager-cache: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.11'
+      - name: Record actual runtimes and require Python
+        run: |
+          node --version
+          npm --version
+          node --input-type=commonjs -e '
+            const {spawnSync,execFileSync}=require("node:child_process"),assert=require("node:assert/strict");
+            const python=["python3","python"].find(p=>spawnSync(p,["--version"],{stdio:"ignore"}).status===0);
+            assert.ok(python,"same Python selection as regression test must resolve");
+            const info=JSON.parse(execFileSync(python,["-c","import sys,json; print(json.dumps(dict(executable=sys.executable,version=list(sys.version_info[:3]))))"],{encoding:"utf8"}));
+            assert.deepEqual(info.version.slice(0,2),[3,11]);
+            console.log(JSON.stringify({selectedCommand:python,...info}));
+          '
+      - name: Install locked development dependencies without scripts
+        run: npm ci --ignore-scripts
+      - name: Actual Python serial cleanup regression (synthetic serial module)
+        run: node --test --test-reporter=tap test/serial-pump-cleanup.test.mjs
+      - name: Full harness
+        run: npm test
+      - name: Security suite
+        run: npm run test:security
+      - name: Brain verification
+        run: npm run brain:verify
+      - name: Flywheel plan only
+        run: npm run flywheel:plan
+      - name: Flywheel self-test
+        run: npm run flywheel:verify
+      - name: Verify packaged-file manifest
+        run: npm run manifest:verify
+      - name: Dependency audit
+        run: npm audit --omit=optional
+      - name: Package dry-run and owner size/map gate
+        run: |
+          npm pack --dry-run --json | node --input-type=commonjs -e '
+            const fs=require("node:fs"),assert=require("node:assert/strict");
+            const [info]=JSON.parse(fs.readFileSync(0,"utf8"));
+            assert.equal(info.files.filter(f=>f.path.endsWith(".map")).length,0);
+            assert.ok(info.unpackedSize<=458752,`unpacked size ${info.unpackedSize} exceeds 458752`);
+            console.log(JSON.stringify({files:info.files.length,unpackedSize:info.unpackedSize,budget:458752,maps:0}));
+          '
+      - name: Final manifest and tracked-source integrity
+        run: |
+          npm run manifest:verify
+          git diff --check
+          git diff --exit-code
